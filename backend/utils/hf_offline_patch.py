@@ -137,6 +137,18 @@ def force_offline_if_cached(is_cached: bool, model_label: str = ""):
                         tf_hub._is_offline_mode = _saved_transformers_const
                     except ImportError:
                         pass
+
+                # Clear cached HTTP sessions so the next request picks up
+                # the restored HF_HUB_OFFLINE value. Without this, a session
+                # created while offline permanently uses OfflineAdapter and
+                # subsequent network loads fail even after we restore state.
+                try:
+                    from huggingface_hub.utils._http import _get_session_from_cache
+
+                    _get_session_from_cache.cache_clear()
+                except ImportError:
+                    pass
+
                 _saved_env = None
                 _saved_hf_const = None
                 _saved_transformers_const = None

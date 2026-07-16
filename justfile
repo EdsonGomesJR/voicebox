@@ -47,7 +47,7 @@ setup-python:
         torch_index=""
         if [ -e /proc/driver/nvidia/version ] || [ -d /sys/module/nvidia ]; then
             echo "Detected NVIDIA GPU — installing CUDA PyTorch..."
-            torch_index="https://download.pytorch.org/whl/cu128"
+            torch_index="https://download.pytorch.org/whl/cu124"
         elif [ -e /dev/kfd ]; then
             if [ -n "${VOICEBOX_ROCM_VERSION:-}" ]; then
                 rocm_ver="$VOICEBOX_ROCM_VERSION"
@@ -91,20 +91,27 @@ setup-python:
     & "{{ python }}" -m pip install --upgrade pip -q
     $gpus = Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name
     Write-Host "Detected GPUs: $($gpus -join ', ')"
-    $hasNvidia = ($gpus | Where-Object { $_ -match 'NVIDIA' }).Count -gt 0
+    $hasNvidia = ($gpus | Where-Object { $_ -match 'NVIDIA|GeForce|Quadro|Tesla' }).Count -gt 0
     $hasIntelArc = ($gpus | Where-Object { $_ -match 'Arc' }).Count -gt 0
     if ($hasNvidia) { \
         Write-Host "NVIDIA GPU detected — installing PyTorch with CUDA support..."; \
-        & "{{ pip }}" install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128; \
+        & "{{ pip }}" install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124; \
     } elseif ($hasIntelArc) { \
         Write-Host "Intel Arc GPU detected — installing PyTorch with XPU support..."; \
         & "{{ pip }}" install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/xpu; \
         & "{{ pip }}" install intel-extension-for-pytorch --index-url https://download.pytorch.org/whl/xpu; \
     } else { \
-        Write-Host "No NVIDIA or Intel Arc GPU detected — using CPU-only PyTorch."; \
-        Write-Host "If you have an Intel Arc GPU, install XPU support manually:"; \
-        Write-Host "  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/xpu"; \
-        Write-Host "  pip install intel-extension-for-pytorch --index-url https://download.pytorch.org/whl/xpu"; \
+        Write-Host "No NVIDIA or Intel Arc GPU detected — checking nvidia-smi..."; \
+        $nvidiaSmiOk = $null -ne (Get-Command nvidia-smi -ErrorAction SilentlyContinue) -and (nvidia-smi --query-gpu=name --format=csv,noheader 2>$null); \
+        if ($nvidiaSmiOk) { \
+            Write-Host "nvidia-smi found — installing PyTorch with CUDA support..."; \
+            & "{{ pip }}" install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124; \
+        } else { \
+            Write-Host "No NVIDIA or Intel Arc GPU detected — using CPU-only PyTorch."; \
+            Write-Host "If you have an Intel Arc GPU, install XPU support manually:"; \
+            Write-Host "  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/xpu"; \
+            Write-Host "  pip install intel-extension-for-pytorch --index-url https://download.pytorch.org/whl/xpu"; \
+        } \
     }
     & "{{ pip }}" install -r {{ backend_dir }}/requirements.txt
     & "{{ pip }}" install --no-deps chatterbox-tts
@@ -115,7 +122,7 @@ setup-python:
 
 # Install JavaScript dependencies
 setup-js:
-    bun install
+    npm install
 
 # ─── Development ──────────────────────────────────────────────────────
 
@@ -130,7 +137,7 @@ dev: _ensure-venv _ensure-sidecar
         echo "Backend already running on http://localhost:17493"
     else
         echo "Starting backend on http://localhost:17493 ..."
-        {{ venv_bin }}/uvicorn backend.main:app --reload --port 17493 &
+        {{ venv_bin }}/uvicorn backend.main:app --reload --reload-exclude '*/backends/*' --port 17493 &
         backend_pid=$!
         sleep 2
     fi
@@ -138,36 +145,36 @@ dev: _ensure-venv _ensure-sidecar
     trap '[ -n "$backend_pid" ] && kill "$backend_pid" 2>/dev/null; wait' EXIT
 
     echo "Starting Tauri desktop app..."
-    cd {{ tauri_dir }} && bun run tauri dev
+    cd {{ tauri_dir }} && npm run tauri dev
 
 [windows]
 dev: _ensure-venv _ensure-sidecar
     $backendJob = $null; \
     try { $null = Invoke-WebRequest -Uri "http://127.0.0.1:17493/health" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop; Write-Host "Backend already running on http://localhost:17493" } catch { \
         Write-Host "Starting backend on http://localhost:17493 ..."; \
-        $backendJob = Start-Process -PassThru -NoNewWindow -FilePath "{{ python }}" -ArgumentList "-m","uvicorn","backend.main:app","--reload","--port","17493"; \
+        $backendJob = Start-Process -PassThru -NoNewWindow -FilePath "{{ python }}" -ArgumentList "-m","uvicorn","backend.main:app","--reload","--reload-exclude=*/backends/*","--port","17493"; \
         Start-Sleep -Seconds 2; \
     }; \
     Write-Host "Starting Tauri desktop app..."; \
-    try { Set-Location "{{ tauri_dir }}"; bun run tauri dev } finally { if ($backendJob) { taskkill /PID $backendJob.Id /T /F 2>$null | Out-Null } }
+    try { Set-Location "{{ tauri_dir }}"; npm run tauri dev } finally { if ($backendJob) { taskkill /PID $backendJob.Id /T /F 2>$null | Out-Null } }
 
 # Start backend only
 [unix]
 dev-backend: _ensure-venv
-    {{ venv_bin }}/uvicorn backend.main:app --reload --port 17493
+    {{ venv_bin }}/uvicorn backend.main:app --reload --reload-exclude '*/backends/*' --port 17493
 
 [windows]
 dev-backend: _ensure-venv
-    & "{{ python }}" -m uvicorn backend.main:app --reload --port 17493
+    & "{{ python }}" -m uvicorn backend.main:app --reload --reload-exclude '*/backends/*' --port 17493
 
 # Start Tauri desktop app only (backend must be running separately)
 [unix]
 dev-frontend: _ensure-sidecar
-    cd {{ tauri_dir }} && bun run tauri dev
+    cd {{ tauri_dir }} && npm run tauri dev
 
 [windows]
 dev-frontend: _ensure-sidecar
-    Set-Location "{{ tauri_dir }}"; bun run tauri dev
+    Set-Location "{{ tauri_dir }}"; npm run tauri dev
 
 # Start backend (if not already running) + web app (no Tauri)
 [unix]
@@ -180,25 +187,25 @@ dev-web: _ensure-venv
         echo "Backend already running on http://localhost:17493"
     else
         echo "Starting backend on http://localhost:17493 ..."
-        {{ venv_bin }}/uvicorn backend.main:app --reload --port 17493 &
+        {{ venv_bin }}/uvicorn backend.main:app --reload --reload-exclude '*/backends/*' --port 17493 &
         backend_pid=$!
         sleep 2
     fi
 
     trap '[ -n "$backend_pid" ] && kill "$backend_pid" 2>/dev/null; wait' EXIT
 
-    cd {{ web_dir }} && bun run dev
+    cd {{ web_dir }} && npm run dev
 
 [windows]
 dev-web: _ensure-venv
     $backendJob = $null; \
     try { $null = Invoke-WebRequest -Uri "http://127.0.0.1:17493/health" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop; Write-Host "Backend already running on http://localhost:17493" } catch { \
         Write-Host "Starting backend on http://localhost:17493 ..."; \
-        $backendJob = Start-Process -PassThru -NoNewWindow -FilePath "{{ python }}" -ArgumentList "-m","uvicorn","backend.main:app","--reload","--port","17493"; \
+        $backendJob = Start-Process -PassThru -NoNewWindow -FilePath "{{ python }}" -ArgumentList "-m","uvicorn","backend.main:app","--reload","--reload-exclude=*/backends/*","--port","17493"; \
         Start-Sleep -Seconds 2; \
     }; \
     Write-Host "Starting web app..."; \
-    try { Set-Location "{{ web_dir }}"; bun run dev } finally { if ($backendJob) { taskkill /PID $backendJob.Id /T /F 2>$null | Out-Null } }
+    try { Set-Location "{{ web_dir }}"; npm run dev } finally { if ($backendJob) { taskkill /PID $backendJob.Id /T /F 2>$null | Out-Null } }
 
 # Kill all dev processes
 [unix]
@@ -253,20 +260,20 @@ build-local: build-server build-server-cuda build-tauri
 # Build Tauri desktop app
 [unix]
 build-tauri:
-    cd {{ tauri_dir }} && bun run tauri build
+    cd {{ tauri_dir }} && npm run tauri build
 
 [windows]
 build-tauri:
-    Set-Location "{{ tauri_dir }}"; bun run tauri build
+    Set-Location "{{ tauri_dir }}"; npm run tauri build
 
 # Build web app
 [unix]
 build-web:
-    cd {{ web_dir }} && bun run build
+    cd {{ web_dir }} && npm run build
 
 [windows]
 build-web:
-    Set-Location "{{ web_dir }}"; bun run build
+    Set-Location "{{ web_dir }}"; npm run build
 
 # ─── Code Quality ────────────────────────────────────────────────────
 
@@ -275,7 +282,7 @@ check: check-js check-python
 
 # JS/TS: lint + format + typecheck (Biome)
 check-js:
-    bun run check
+    npm run check
 
 # Python: lint + format check (ruff)
 check-python: _ensure-venv
@@ -284,17 +291,17 @@ check-python: _ensure-venv
 
 # Lint with Biome (JS) + ruff (Python)
 lint: _ensure-venv
-    bun run lint
+    npm run lint
     {{ venv_bin }}/ruff check {{ backend_dir }}
 
 # Format with Biome (JS) + ruff (Python)
 format: _ensure-venv
-    bun run format
+    npm run format
     {{ venv_bin }}/ruff format {{ backend_dir }}
 
 # Fix lint + format issues (JS + Python)
 fix: _ensure-venv
-    bun run check:fix
+    npm run check:fix
     {{ venv_bin }}/ruff check {{ backend_dir }} --fix
     {{ venv_bin }}/ruff format {{ backend_dir }}
 
@@ -436,4 +443,4 @@ _ensure-venv:
 # Ensure Tauri dev sidecar placeholder exists
 [private]
 _ensure-sidecar:
-    bun run setup:dev
+    node scripts/setup-dev-sidecar.js

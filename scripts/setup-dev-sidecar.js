@@ -7,7 +7,7 @@
  * even though developers typically run the Python server manually.
  *
  * This script creates minimal placeholder binaries that allow Tauri to compile.
- * The actual server should be started separately with `bun run dev:server`.
+ * The actual server should be started separately with `npm run dev:server`.
  */
 
 import { execSync } from 'child_process';
@@ -357,7 +357,7 @@ function createPlaceholderBinary(targetTriple, baseName) {
   } else {
     // Create a minimal shell script for Unix-like systems
     const script = `#!/bin/sh
-echo "[${baseName}] Dev mode placeholder - start the real server with: bun run dev:server"
+echo "[${baseName}] Dev mode placeholder - start the real server with: npm run dev:server"
 exit 1
 `;
     writeFileSync(binaryPath, script, { mode: 0o755 });

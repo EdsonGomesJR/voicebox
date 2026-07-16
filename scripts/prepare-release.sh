@@ -9,7 +9,7 @@ echo "🔑 Checking for signing keys..."
 
 if [ ! -f ~/.tauri/voicebox.key ]; then
   echo "❌ Private key not found at ~/.tauri/voicebox.key"
-  echo "Run: cd tauri && bun tauri signer generate -w ~/.tauri/voicebox.key"
+  echo "Run: cd tauri && npx tauri signer generate -w ~/.tauri/voicebox.key"
   exit 1
 fi
 
@@ -43,7 +43,7 @@ echo ""
 echo "📦 Building release..."
 echo ""
 
-bun run build
+npm run build
 
 echo ""
 echo "✅ Release build complete!"

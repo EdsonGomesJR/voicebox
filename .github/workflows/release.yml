@@ -128,8 +128,8 @@ jobs:
           echo "Built voicebox-server-${PLATFORM}.exe"
           echo "Built voicebox-mcp-${PLATFORM}.exe"
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -142,7 +142,7 @@ jobs:
           workspaces: "./tauri/src-tauri -> target"
 
       - name: Install dependencies
-        run: bun install
+        run: npm ci
 
       - name: Install Apple API key
         if: matrix.platform == 'macos-latest' || matrix.platform == 'macos-15-intel'
@@ -171,9 +171,9 @@ jobs:
           rustc --version
           cargo --version
           echo "=== Bun ==="
-          bun --version
+          node --version
           echo "=== Tauri CLI ==="
-          cd tauri && bun run tauri --version
+          cd tauri && npx tauri --version
 
       - name: Extract release notes from CHANGELOG.md
         id: changelog

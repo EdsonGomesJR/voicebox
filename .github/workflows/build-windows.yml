@@ -38,8 +38,8 @@ jobs:
           echo "Built voicebox-server-${PLATFORM}.exe"
           echo "Built voicebox-mcp-${PLATFORM}.exe"
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -50,7 +50,7 @@ jobs:
           workspaces: "./tauri/src-tauri -> target"
 
       - name: Install dependencies
-        run: bun install
+        run: npm ci
 
       - uses: tauri-apps/tauri-action@v0
         env:

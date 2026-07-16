@@ -55,15 +55,15 @@ echo "Downloading OpenAPI schema..."
 curl -s http://localhost:17493/openapi.json > app/openapi.json
 
 # Check if openapi-typescript-codegen is installed
-if ! bunx --bun openapi-typescript-codegen --version > /dev/null 2>&1; then
+if ! npx --yes openapi-typescript-codegen --version > /dev/null 2>&1; then
     echo "Installing openapi-typescript-codegen..."
-    bun add -d openapi-typescript-codegen
+    npm install --save-dev openapi-typescript-codegen
 fi
 
 # Generate TypeScript client
 echo "Generating TypeScript client..."
 cd app
-bunx --bun openapi-typescript-codegen \
+npx openapi-typescript-codegen \
     --input openapi.json \
     --output src/lib/api \
     --client fetch \
