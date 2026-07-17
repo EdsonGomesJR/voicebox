@@ -68,7 +68,8 @@ RUN pip install --no-cache-dir --prefix=/install --no-deps \
     git+https://github.com/ysharma3501/LuxTTS.git
 # qwen-tts pins transformers==4.57.3 — installed --no-deps (see note).
 RUN pip install --no-cache-dir --prefix=/install --no-deps qwen-tts
-RUN pip install --no-cache-dir --prefix=/install \
+# Qwen3-TTS git repo pins transformers==4.57.3 via qwen-tts — installed --no-deps.
+RUN pip install --no-cache-dir --prefix=/install --no-deps \
     git+https://github.com/QwenLM/Qwen3-TTS.git
 # === Stage 3: Runtime ===
 FROM python:3.11-slim

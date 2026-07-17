@@ -83,12 +83,13 @@ setup-python:
     # resolver doesn't deadlock against omnivoice's >=5.3.0. Runtime APIs
     # (Qwen3TTSModel) work on 5.14.1.
     {{ pip }} install --no-deps qwen-tts
+    # Qwen3-TTS git repo pins transformers==4.57.3 via qwen-tts — see windows note.
     # Apple Silicon: install MLX backend
     if [ "$(uname -m)" = "arm64" ] && [ "$(uname)" = "Darwin" ]; then
         echo "Detected Apple Silicon — installing MLX dependencies..."
         {{ pip }} install -r {{ backend_dir }}/requirements-mlx.txt
     fi
-    {{ pip }} install git+https://github.com/QwenLM/Qwen3-TTS.git
+    {{ pip }} install --no-deps git+https://github.com/QwenLM/Qwen3-TTS.git
     {{ pip }} install pyinstaller ruff pytest pytest-asyncio -q
     echo "Python environment ready."
 
@@ -138,7 +139,11 @@ setup-python:
     & "{{ pip }}" install --no-deps 'git+https://github.com/ysharma3501/LuxTTS.git'
     # qwen-tts pins transformers==4.57.3 — installed --no-deps (see note).
     & "{{ pip }}" install --no-deps qwen-tts
-    & "{{ pip }}" install git+https://github.com/QwenLM/Qwen3-TTS.git
+    # Qwen3-TTS git repo pulls in qwen-tts which pins transformers==4.57.3,
+    # conflicting with omnivoice's >=5.3.0. Installed --no-deps so the pip
+    # resolver doesn't downgrade transformers. Runtime APIs (Qwen3TTSModel)
+    # work on 5.x — verified on 5.14.1.
+    & "{{ pip }}" install --no-deps git+https://github.com/QwenLM/Qwen3-TTS.git
     & "{{ pip }}" install pyinstaller ruff pytest pytest-asyncio -q
     Write-Host "Python environment ready."
 
