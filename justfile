@@ -74,6 +74,7 @@ setup-python:
     # other engines work fine on 5.x at runtime (verified by smoke-testing
     # each engine's import path on transformers 5.14.1).
     {{ pip }} install --no-deps omnivoice
+    {{ pip }} install --no-deps 'git+https://github.com/ysharma3501/LuxTTS.git'
     # Apple Silicon: install MLX backend
     if [ "$(uname -m)" = "arm64" ] && [ "$(uname)" = "Darwin" ]; then
         echo "Detected Apple Silicon — installing MLX dependencies..."
@@ -124,6 +125,8 @@ setup-python:
     & "{{ pip }}" install --no-deps hume-tada
     # OmniVoice pins transformers>=5.3.0 — see note in the unix target above.
     & "{{ pip }}" install --no-deps omnivoice
+    & "backend/venv/Scripts/pip.exe" install --no-deps 
+    'git+https://github.com/ysharma3501/LuxTTS.git'
     & "{{ pip }}" install git+https://github.com/QwenLM/Qwen3-TTS.git
     & "{{ pip }}" install pyinstaller ruff pytest pytest-asyncio -q
     Write-Host "Python environment ready."

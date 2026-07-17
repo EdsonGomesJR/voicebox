@@ -63,6 +63,8 @@ RUN pip install --no-cache-dir --prefix=/install --no-deps hume-tada
 # OmniVoice pins transformers>=5.3.0 — see note in the justfile's
 # setup-python target. --no-deps avoids the pip resolver deadlock.
 RUN pip install --no-cache-dir --prefix=/install --no-deps omnivoice
+RUN pip install --no-cache-dir --prefix=/install --no-deps \
+git+https://github.com/ysharma3501/LuxTTS.git
 RUN pip install --no-cache-dir --prefix=/install \
     git+https://github.com/QwenLM/Qwen3-TTS.git
 
