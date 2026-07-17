@@ -133,7 +133,7 @@ setup-python:
     & "{{ pip }}" install --no-deps hume-tada
     # OmniVoice pins transformers>=5.3.0 — see note in the unix target above.
    
-     & "{{ pip }}" install --no-deps omnivoice
+    & "{{ pip }}" install --no-deps omnivoice
     # Zipvoice (LuxTTS) pins transformers<=4.57.6 — see note above.
     & "{{ pip }}" install --no-deps 'git+https://github.com/ysharma3501/LuxTTS.git'
     # qwen-tts pins transformers==4.57.3 — installed --no-deps (see note).
