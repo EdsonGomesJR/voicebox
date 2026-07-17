@@ -74,7 +74,15 @@ setup-python:
     # other engines work fine on 5.x at runtime (verified by smoke-testing
     # each engine's import path on transformers 5.14.1).
     {{ pip }} install --no-deps omnivoice
+    # Zipvoice (LuxTTS) pins transformers<=4.57.6, conflicting with
+    # omnivoice's >=5.3.0. Installed --no-deps; runtime APIs (LuxTTS
+    # class) work fine on 5.14.1. linacodec (Zipvoice's dep) is already
+    # installed via requirements.txt since it doesn't pin transformers.
     {{ pip }} install --no-deps 'git+https://github.com/ysharma3501/LuxTTS.git'
+    # qwen-tts pins transformers==4.57.3 — installed --no-deps so the pip
+    # resolver doesn't deadlock against omnivoice's >=5.3.0. Runtime APIs
+    # (Qwen3TTSModel) work on 5.14.1.
+    {{ pip }} install --no-deps qwen-tts
     # Apple Silicon: install MLX backend
     if [ "$(uname -m)" = "arm64" ] && [ "$(uname)" = "Darwin" ]; then
         echo "Detected Apple Silicon — installing MLX dependencies..."
@@ -124,9 +132,12 @@ setup-python:
     & "{{ pip }}" install --no-deps chatterbox-tts
     & "{{ pip }}" install --no-deps hume-tada
     # OmniVoice pins transformers>=5.3.0 — see note in the unix target above.
-    & "{{ pip }}" install --no-deps omnivoice
-    & "backend/venv/Scripts/pip.exe" install --no-deps 
-    'git+https://github.com/ysharma3501/LuxTTS.git'
+   
+     & "{{ pip }}" install --no-deps omnivoice
+    # Zipvoice (LuxTTS) pins transformers<=4.57.6 — see note above.
+    & "{{ pip }}" install --no-deps 'git+https://github.com/ysharma3501/LuxTTS.git'
+    # qwen-tts pins transformers==4.57.3 — installed --no-deps (see note).
+    & "{{ pip }}" install --no-deps qwen-tts
     & "{{ pip }}" install git+https://github.com/QwenLM/Qwen3-TTS.git
     & "{{ pip }}" install pyinstaller ruff pytest pytest-asyncio -q
     Write-Host "Python environment ready."
