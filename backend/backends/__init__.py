@@ -215,6 +215,7 @@ TTS_ENGINES = {
     "chatterbox_turbo": "Chatterbox Turbo",
     "tada": "TADA",
     "kokoro": "Kokoro",
+    "omnivoice": "OmniVoice",
 }
 
 LLM_ENGINES = {
@@ -363,6 +364,39 @@ def _get_non_qwen_tts_configs() -> list[ModelConfig]:
             hf_repo_id="hexgrad/Kokoro-82M",
             size_mb=350,
             languages=["en", "es", "fr", "hi", "it", "pt", "ja", "zh"],
+        ),
+        ModelConfig(
+            model_name="omnivoice",
+            display_name="OmniVoice (600+ languages, voice design)",
+            engine="omnivoice",
+            hf_repo_id="k2-fsa/OmniVoice",
+            size_mb=3000,
+            supports_instruct=True,  # voice design via "instruct" param
+            languages=[
+                "ar",
+                "da",
+                "de",
+                "el",
+                "en",
+                "es",
+                "fi",
+                "fr",
+                "he",
+                "hi",
+                "it",
+                "ja",
+                "ko",
+                "ms",
+                "nl",
+                "no",
+                "pl",
+                "pt",
+                "ru",
+                "sv",
+                "sw",
+                "tr",
+                "zh",
+            ],
         ),
     ]
 
@@ -708,6 +742,10 @@ def get_tts_backend_for_engine(engine: str) -> TTSBackend:
             from .qwen_custom_voice_backend import QwenCustomVoiceBackend
 
             backend = QwenCustomVoiceBackend()
+        elif engine == "omnivoice":
+            from .omnivoice_backend import OmniVoiceTTSBackend
+
+            backend = OmniVoiceTTSBackend()
         else:
             raise ValueError(f"Unknown TTS engine: {engine}. Supported: {list(TTS_ENGINES.keys())}")
 

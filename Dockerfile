@@ -60,6 +60,9 @@ RUN if [ "$PYTORCH_VARIANT" = "rocm" ]; then \
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 RUN pip install --no-cache-dir --prefix=/install --no-deps chatterbox-tts
 RUN pip install --no-cache-dir --prefix=/install --no-deps hume-tada
+# OmniVoice pins transformers>=5.3.0 — see note in the justfile's
+# setup-python target. --no-deps avoids the pip resolver deadlock.
+RUN pip install --no-cache-dir --prefix=/install --no-deps omnivoice
 RUN pip install --no-cache-dir --prefix=/install \
     git+https://github.com/QwenLM/Qwen3-TTS.git
 

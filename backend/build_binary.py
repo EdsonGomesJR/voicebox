@@ -259,6 +259,50 @@ def build_server(cuda=False, rocm=False):
             "tada.utils.gray_code",
             "--hidden-import",
             "tada.utils.text",
+            # OmniVoice (k2-fsa/OmniVoice) — diffusion-language-model TTS
+            # with 600+ languages. The __init__.py calls
+            # importlib.metadata.version("omnivoice") at import time, so
+            # --copy-metadata is required (same pattern as qwen-tts).
+            # --collect-all is defensive: brand-new lib with no PyInstaller
+            # track record. The heavy module omnivoice.models.omnivoice
+            # also has many lazy imports we wire explicitly below.
+            "--hidden-import",
+            "backend.backends.omnivoice_backend",
+            "--hidden-import",
+            "omnivoice",
+            "--hidden-import",
+            "omnivoice.models",
+            "--hidden-import",
+            "omnivoice.models.omnivoice",
+            "--hidden-import",
+            "omnivoice.utils.audio",
+            "--hidden-import",
+            "omnivoice.utils.text",
+            "--hidden-import",
+            "omnivoice.utils.lang_map",
+            "--hidden-import",
+            "omnivoice.utils.voice_design",
+            "--hidden-import",
+            "omnivoice.utils.duration",
+            "--collect-all",
+            "omnivoice",
+            "--copy-metadata",
+            "omnivoice",
+            # HiggsAudioV2Tokenizer is loaded via transformers.AutoModel
+            # from eustlb/higgs-audio-v2-tokenizer, which means PyInstaller's
+            # static analysis can miss the submodule. Hidden-import each one.
+            "--hidden-import",
+            "transformers.models.higgs_audio_v2",
+            "--hidden-import",
+            "transformers.models.higgs_audio_v2.configuration_higgs_audio_v2",
+            "--hidden-import",
+            "transformers.models.higgs_audio_v2.modeling_higgs_audio_v2",
+            "--hidden-import",
+            "transformers.models.higgs_audio_v2.modular_higgs_audio_v2",
+            "--hidden-import",
+            "transformers.models.higgs_audio_v2.processing_higgs_audio_v2",
+            "--hidden-import",
+            "transformers.models.higgs_audio_v2.generation_higgs_audio_v2",
             # DAC shim — provides dac.nn.layers.Snake1d without the real
             # descript-audio-codec package (which pulls onnx/tensorboard via
             # descript-audiotools). The shim is in backend/utils/dac_shim.py.

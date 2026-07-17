@@ -9,10 +9,42 @@ alembic>=1.13.0
 
 # ML models
 torch>=2.2.0
-transformers>=4.36.0,<=4.57.6
+# transformers 5.x is required by omnivoice (k2-fsa/OmniVoice pulls
+# transformers>=5.3.0). The other engines (zipvoice/LuxTTS,
+# chatterbox, hume-tada) cap at transformers<=4.57.6 in their pyproject.toml
+# metadata, but the runtime APIs they use (Qwen3TTSModel, LuxTTS,
+# ChatterboxMultilingualTTS) all import and load on 5.14.1 — verified
+# empirically by importing each with --no-deps installs.
+# We use the broader constraint to satisfy omnivoice's hard requirement
+# on 5.x while keeping the other engines operational (they just print a
+# "version conflict" warning during pip install, which is harmless).
+transformers>=5.3.0,<6.0
 accelerate>=0.26.0
 huggingface_hub>=0.20.0
 qwen-tts>=0.0.5
+
+# OmniVoice (k2-fsa/OmniVoice) — diffusion-language-model TTS supporting
+# 600+ languages, zero-shot voice cloning, and voice design via the
+# `instruct` parameter.
+#
+# Installed with --no-deps in the justfile (and release.yml) because
+# omnivoice pins transformers>=5.3.0 which conflicts with the sub-4.57.6
+# pins in zipvoice / chatterbox-tts. We let omnivoice use whatever
+# transformers is on the system (will be 5.x) and skip its other
+# optional deps (gradio is for the CLI demo, not the Python API).
+omnivoice>=0.2.0
+# Sub-dependencies of omnivoice (declared in its METADATA):
+# - accelerate        → already in requirements.txt above
+# - librosa           → already in requirements.txt below
+# - numpy             → already in requirements.txt below
+# - pydub             → listed below
+# - soundfile         → already in requirements.txt below
+# - tensorboardX      → listed below
+# - torch, torchaudio → already in requirements.txt above
+# - webdataset        → listed below
+pydub
+tensorboardX
+webdataset
 
 # LuxTTS (voice cloning engine)
 # piper-phonemize needs custom index (no PyPI wheels)
